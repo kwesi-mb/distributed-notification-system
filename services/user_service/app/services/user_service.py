@@ -1,31 +1,3 @@
-# from app.models.user import User
-# from app.repositories.user_repository import UserRepository
-# from app.schemas.user import CreateUserRequest
-# from app.utils.security import hash_password 
-
-# class UserService:
-
-#     def __init__(self, repository):
-#         self.repository = repository
-
-#     def create_user(self, request: CreateUserRequest):
-
-#         existing = self.repository.get_by_email(request.email)
-
-#         if existing:
-#             raise ValueError("Email already exists.")
-
-#         user = User(
-#             name=request.name,
-#             email=request.email,
-#             password_hash=hash_password(request.password),
-#             push_token=request.push_token,
-#             email_enabled=request.preferences.email,
-#             push_enabled=request.preferences.push,
-#         )
-
-#         return self.repository.create(user)
-
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import CreateUserRequest
@@ -38,14 +10,19 @@ from app.schemas.preference import PreferenceResponse
 from app.schemas.preference import (
     UpdatePreferenceRequest,
 )
+from app.services.cache_service import CacheService 
+from app.schemas.preference import PreferenceResponse
+from app.core.cache_keys import CacheKeys
 
 class UserService:
 
     def __init__(
         self,
         repository: UserRepository,
+        cache: CacheService,
     ):
         self.repository  = repository
+        self.cache = cache
 
     def create_user(
         self,
@@ -175,10 +152,29 @@ class UserService:
         current_user,
     ) -> PreferenceResponse:
 
-        return PreferenceResponse(
+        cache_key = CacheKeys.preferences(
+            str(current_user.id)
+        )
+
+        cached = self.cache.get(cache_key)
+
+        if cached:
+
+            return PreferenceResponse(
+                **cached 
+            )
+
+        preferences = PreferenceResponse(
             email=current_user.email_enabled,
             push=current_user.push_enabled,
         )
+
+        self.cache.set(
+            cache_key,
+            preferences.model_dump(),
+        )
+
+        return preferences 
 
     def update_preferences(
         self,
@@ -195,6 +191,12 @@ class UserService:
         self.repository.commit()
 
         self.repository.refresh(current_user)
+
+        self.cache.delete(
+            CacheKeys.preferences(
+                str(current_user.id)
+            )
+        )
 
         return current_user
         
