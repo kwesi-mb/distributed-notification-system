@@ -4,7 +4,7 @@ from uuid import uuid4
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import String
-
+from sqlalchemy import Text 
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.sql import func
@@ -59,4 +59,9 @@ class User(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+    refresh_token_hash = mapped_column(
+        Text,
+        nullable=True,
     )

@@ -20,27 +20,50 @@ class APIResponse(BaseModel, Generic[T]):
     meta: Optional[PaginationMeta] = None 
 
 
+    def success_response(
+        data: Any = None,
+        message: str = "Success",
+        meta: Optional[PaginationMeta] = None,
+    ) -> APIResponse:
+        return APIResponse(
+            success=True,
+            data=data,
+            error=None,
+            message=message,
+            meta=meta,
+        )
+
+    def error_response(
+        message: str,
+        error: str,
+    ) -> APIResponse:
+        return APIResponse(
+            success=False,
+            data=None,
+            error=error,
+            message=message,
+            meta=None,
+        )
+
+
+# Module-level convenience wrappers so callers can import directly:
 def success_response(
     data: Any = None,
     message: str = "Success",
     meta: Optional[PaginationMeta] = None,
 ) -> APIResponse:
-    return APIResponse(
-        success=True,
+    return APIResponse.success_response(
         data=data,
-        error=None,
         message=message,
         meta=meta,
     )
+
 
 def error_response(
     message: str,
     error: str,
 ) -> APIResponse:
-    return APIResponse(
-        success=False,
-        data=None,
-        error=error,
+    return APIResponse.error_response(
         message=message,
-        meta=None,
+        error=error,
     )
