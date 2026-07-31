@@ -34,6 +34,10 @@ from app.utils.security import hash_password
 from app.exceptions.user import UserNotFoundException, UserAlreadyExistsException 
 from app.schemas.user import UpdateUserRequest
 from math import ceil 
+from app.schemas.preference import PreferenceResponse
+from app.schemas.preference import (
+    UpdatePreferenceRequest,
+)
 
 class UserService:
 
@@ -165,4 +169,32 @@ class UserService:
         self.repository.delete(user)
 
         self.repository.commit()
+
+    def get_preferences(
+        self,
+        current_user,
+    ) -> PreferenceResponse:
+
+        return PreferenceResponse(
+            email=current_user.email_enabled,
+            push=current_user.push_enabled,
+        )
+
+    def update_preferences(
+        self,
+        current_user,
+        request: UpdatePreferenceRequest,
+    ):
+
+        if request.email is not None:
+            current_user.email_enabled = request.email
+
+        if request.push is not None:
+            current_user.push_enabled = request.push 
+
+        self.repository.commit()
+
+        self.repository.refresh(current_user)
+
+        return current_user
         

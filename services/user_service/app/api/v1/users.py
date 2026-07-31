@@ -1,39 +1,3 @@
-# from fastapi import APIRouter, Depends, HTTPException
-
-# from app.schemas.user import CreateUserRequest
-# from app.services.user_service import UserService
-# from app.dependencies.user import get_user_service
-
-# router = APIRouter(
-#     prefix="/users",
-#     tags=["Users"]
-# )
-
-# @router.post("/")
-# def create_user(
-#     request: CreateUserRequest,
-#     service: UserService = Depends(get_user_service),
-# ):
-
-#     try:
-
-#         user = service.create_user(request)
-
-#         return {
-#             "success": True,
-#             "data": user,
-#             "message": "User created successfully.",
-#             "error": None,
-#             "meta": None,
-#         }
-
-#     except ValueError as e:
-
-#         raise HTTPException(
-#             status_code=400,
-#             detail=str(e),
-#         )
-
 import sys
 from pathlib import Path
 
@@ -53,6 +17,15 @@ from app.dependencies.user import get_user_service
 from app.schemas.user import CreateUserRequest, UpdateUserRequest 
 from app.schemas.user import UserResponse
 from app.services.user_service import UserService
+from app.dependencies.current_user import (
+    get_current_user,
+)
+from app.schemas.preference import (
+    PreferenceResponse,
+)
+from app.schemas.preference import (
+    UpdatePreferenceRequest,
+)
 
 
 router = APIRouter(
@@ -173,4 +146,59 @@ def delete_user(
     return success_response(
         data=None,
         message="User deleted successfully."
+    )
+
+@router.get("/me/preferences")
+def get_preferences(
+
+    current_user=Depends(
+        get_current_user,
+    ),
+
+    service: UserService = Depends(
+        get_user_service,
+    ),
+):
+
+    preferences = service.get_preferences(
+        current_user
+    )
+
+    return success_response(
+
+        data=preferences,
+
+        message="Preferences retrieved successfully.",
+    )
+
+@router.patch("/me/preferences")
+def update_preferences(
+
+    request: UpdatePreferenceRequest,
+
+    current_user=Depends(
+        get_current_user,
+    ),
+
+    service: UserService = Depends(
+        get_user_service,
+    ),
+):
+
+    user = service.update_preferences(
+        current_user,
+        request,
+    )
+
+    return success_response(
+
+        data=PreferenceResponse(
+
+            email=user.email_enabled,
+
+            push=user.push_enabled,
+
+        ),
+
+        message="Preferences updated successfully.",
     )
